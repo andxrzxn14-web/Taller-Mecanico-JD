@@ -1,0 +1,29 @@
+# Claves privadas
+.env
+.env.*
+!.env.example
+
+# Dependencias
+node_modules/
+
+# Registros
+*.log
+npm-debug.log*
+
+# Respaldos y bases de datos
+*.bak
+*.bacpac
+*.mdf
+*.ldf
+*.sql.gz
+
+# Reportes generados
+pruebas/reporte-*.html
+
+# Archivos temporales
+temp/
+tmp/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

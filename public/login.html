@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acceso a Reportes · Mecánica Automotriz J&D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="responsive.css">
+<style>
+  :root {
+    --fondo: #14110c;
+    --panel: #1b1710;
+    --borde: #3a3122;
+    --borde-suave: #2a2418;
+    --texto: #f3ece0;
+    --texto-2: #a79d8a;
+    --texto-3: #6f6757;
+    --naranja: #f08a1c;
+    --naranja-fondo: #3a2610;
+    --ok: #5bc27a;
+    --error: #ef5b4b;
+    --estado: var(--naranja);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(1100px 500px at 50% -10%, #1f1a10 0%, var(--fondo) 60%);
+    color: var(--texto);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .contenedor { width: 100%; max-width: 420px; }
+
+  .marca {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-bottom: 6px;
+  }
+  .marca svg { width: 30px; height: 30px; color: var(--naranja); flex: none; }
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 2.6rem; letter-spacing: .01em; line-height: 1;
+  }
+  .subtitulo { text-align: center; color: var(--texto-2); font-size: .95rem; margin-bottom: 26px; }
+
+  .tarjeta {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 18px;
+    padding: 22px 22px 20px;
+  }
+
+  /* Indicador de estado: es lo único que "se mueve" en la pantalla */
+  .estado {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--texto-2);
+    padding-bottom: 16px; margin-bottom: 18px;
+    border-bottom: 1px dashed var(--borde);
+  }
+  .luz {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--estado);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--estado) 22%, transparent);
+    transition: background .25s, box-shadow .25s;
+  }
+  .estado[data-estado="cargando"] .luz { animation: pulso 1s ease-in-out infinite; }
+  .estado[data-estado="ok"]      { --estado: var(--ok); }
+  .estado[data-estado="error"]   { --estado: var(--error); }
+  @keyframes pulso { 50% { opacity: .35; } }
+
+  .campo { margin-bottom: 16px; }
+  label { display: block; font-size: .85rem; color: var(--texto-2); margin-bottom: 7px; }
+  .entrada {
+    position: relative; display: flex; align-items: center;
+    background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .entrada:focus-within {
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--naranja) 25%, transparent);
+  }
+  .entrada > svg { width: 18px; height: 18px; margin-left: 13px; color: var(--texto-3); flex: none; }
+  input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+    color: var(--texto); font: inherit; font-size: 1rem; padding: 13px 12px;
+  }
+  input::placeholder { color: var(--texto-3); }
+  .ojo {
+    background: none; border: 0; color: var(--texto-3); cursor: pointer;
+    padding: 0 13px; height: 100%; display: grid; place-items: center; border-radius: 0 12px 12px 0;
+  }
+  .ojo:hover { color: var(--texto); }
+  .ojo:focus-visible { outline: 2px solid var(--naranja); outline-offset: -2px; }
+  .ojo svg { width: 18px; height: 18px; }
+
+  .mensaje {
+    min-height: 1.3em; font-size: .88rem; color: var(--error); margin: -2px 0 14px;
+  }
+
+  .boton {
+    width: 100%; padding: 13px 16px; border-radius: 12px; cursor: pointer;
+    background: var(--naranja); color: #1a1004; border: 0;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.2rem; letter-spacing: .03em;
+    transition: filter .15s, transform .05s;
+  }
+  .boton:hover:not(:disabled) { filter: brightness(1.08); }
+  .boton:active:not(:disabled) { transform: translateY(1px); }
+  .boton:disabled { opacity: .6; cursor: wait; }
+  .boton:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
+
+  .volver { text-align: center; margin-top: 18px; font-size: .88rem; }
+  .volver a { color: var(--texto-2); text-decoration: none; border-bottom: 1px solid var(--borde); padding-bottom: 1px; }
+  .volver a:hover { color: var(--naranja); border-color: var(--naranja); }
+  .volver a:focus-visible { outline: 2px solid var(--naranja); outline-offset: 3px; border-radius: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .luz, .boton, .entrada { animation: none !important; transition: none !important; }
+  }
+  @media (max-width: 420px) { h1 { font-size: 2.2rem; } }
+</style>
+</head>
+<body>
+  <main class="contenedor">
+    <div class="marca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <h1>Acceso a Reportes</h1>
+    </div>
+    <p class="subtitulo">Solo personal autorizado de J&amp;D</p>
+
+    <form class="tarjeta" id="formLogin" novalidate>
+      <div class="estado" id="estado" data-estado="espera" role="status" aria-live="polite">
+        <span class="luz"></span>
+        <span id="estadoTexto">Esperando credenciales</span>
+      </div>
+
+      <div class="campo">
+        <label for="usuario">Usuario</label>
+        <div class="entrada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input id="usuario" name="usuario" type="text" autocomplete="username" placeholder="Tu usuario" maxlength="50" autofocus required>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="clave">Contraseña</label>
+        <div class="entrada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="clave" name="clave" type="password" autocomplete="current-password" placeholder="Tu contraseña" maxlength="200" required>
+          <button type="button" class="ojo" id="btnOjo" aria-label="Mostrar contraseña" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <p class="mensaje" id="mensaje" role="alert"></p>
+
+      <button class="boton" id="btnIngresar" type="submit">Ingresar</button>
+    </form>
+
+    <p class="volver"><a href="/">Volver al taller</a></p>
+  </main>
+
+<script>
+  const form = document.getElementById('formLogin');
+  const inUsuario = document.getElementById('usuario');
+  const inClave = document.getElementById('clave');
+  const btn = document.getElementById('btnIngresar');
+  const msg = document.getElementById('mensaje');
+  const estado = document.getElementById('estado');
+  const estadoTexto = document.getElementById('estadoTexto');
+  const btnOjo = document.getElementById('btnOjo');
+
+  function setEstado(tipo, texto) {
+    estado.dataset.estado = tipo;
+    estadoTexto.textContent = texto;
+  }
+
+  btnOjo.addEventListener('click', () => {
+    const visible = inClave.type === 'text';
+    inClave.type = visible ? 'password' : 'text';
+    btnOjo.setAttribute('aria-pressed', String(!visible));
+    btnOjo.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+  });
+
+  [inUsuario, inClave].forEach((el) =>
+    el.addEventListener('input', () => {
+      msg.textContent = '';
+      setEstado('espera', 'Esperando credenciales');
+    })
+  );
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+
+    const usuario = inUsuario.value.trim();
+    const clave = inClave.value;
+
+    if (!usuario || !clave) {
+      msg.textContent = 'Ingresa tu usuario y tu contraseña.';
+      setEstado('error', 'Faltan datos');
+      (usuario ? inClave : inUsuario).focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Verificando…';
+    setEstado('cargando', 'Verificando credenciales');
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, clave })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.ok) {
+        setEstado('ok', 'Acceso concedido');
+        btn.textContent = 'Entrando…';
+        setTimeout(() => (window.location.href = '/Reportes.html'), 500);
+        return;
+      }
+
+      msg.textContent = data.mensaje || 'No se pudo iniciar sesión.';
+      setEstado('error', res.status === 423 ? 'Cuenta bloqueada' : 'Acceso denegado');
+      inClave.value = '';
+      inClave.focus();
+    } catch (err) {
+      msg.textContent = 'No hay conexión con el servidor. Revisa que esté encendido.';
+      setEstado('error', 'Sin conexión');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+  });
+</script>
+</body>
+</html>

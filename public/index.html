@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J&D · Taller Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="responsive.css">
+</head>
+
+<dialog id="dialogPinReportes" class="pin-dialog">
+    <form id="formPinReportes">
+        <h2>Acceso protegido</h2>
+
+        <p>
+            Introduce tu PIN privado para acceder a reportes
+            durante un máximo de 2 minutos.
+        </p>
+
+        <label for="pinReportes">PIN de seguridad</label>
+
+        <input
+            id="pinReportes"
+            type="password"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="off"
+            placeholder="••••••"
+            required
+        >
+
+        <p id="mensajePinReportes"
+           class="pin-error"
+           role="alert"></p>
+
+        <div class="pin-dialog-actions">
+            <button type="button" id="cancelarPinReportes">
+                Cancelar
+            </button>
+
+            <button type="submit" id="confirmarPinReportes">
+                Verificar PIN
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<body>
+<div class="user-role" id="userRole">
+    <span class="user-role-dot"></span>
+    <span id="userRoleText">VERIFICANDO ACCESO</span>
+</div>
+  <div class="stage">
+    <div class="eyebrow"><span class="dot"></span>MECÁNICA AUTOMOTRIZ J&amp;D · TALLER DIGITAL</div>
+
+    <h1 class="greeting">
+      <svg class="wrench" viewBox="0 0 24 24" fill="none" stroke="#E8790A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.7 6.3a4 4 0 0 0-5.6 5.6L3 18l3 3 6.1-6.1a4 4 0 0 0 5.6-5.6l-2.5 2.5-2-2z"/>
+      </svg>
+      <span id="greetingText">Buenos días, Mecánico</span>
+    </h1>
+    <p class="subline">¿Cuál es tu consulta?</p>
+
+
+<!-- ===== BÚSQUEDA INTELIGENTE J&D ===== -->
+
+<div class="panel">
+
+    <div class="input-row">
+
+        <input
+            type="search"
+            class="fake-input"
+            id="busquedaPrincipal"
+            placeholder="Describe el síntoma, la placa o el vehículo…"
+            autocomplete="off"
+            maxlength="200"
+            aria-label="Buscar síntomas, vehículos o reparaciones anteriores"
+        >
+
+        <button
+            type="button"
+            id="btnBuscarPrincipal"
+            class="main-search-button"
+            aria-label="Buscar"
+        >
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2"
+                 stroke-linecap="round">
+                <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                <path d="m16 16 5 5"></path>
+            </svg>
+        </button>
+
+    </div>
+
+    <div class="panel-footer">
+
+        <div class="mode-group" role="group"
+             aria-label="Tipo de búsqueda">
+
+            <button
+                type="button"
+                class="mode active"
+                data-search-mode="diagnostico"
+                aria-pressed="true"
+            >
+                Diagnóstico
+            </button>
+
+            <button
+                type="button"
+                class="mode"
+                data-search-mode="historial"
+                aria-pressed="false"
+            >
+                Historial
+            </button>
+
+        </div>
+
+        <div class="plate">
+            <svg class="mic"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
+                <path d="M19 11a7 7 0 0 1-14 0"/>
+                <path d="M12 18v3"/>
+            </svg>
+            J&amp;D · BÚSQUEDA INTELIGENTE
+        </div>
+
+    </div>
+
+</div>
+
+<!-- RESULTADOS DE LA BÚSQUEDA -->
+
+<section
+    id="resultadoBusquedaPrincipal"
+    class="main-search-results"
+    hidden
+    aria-live="polite"
+>
+    <div class="main-results-heading">
+        <h2>Asistente de diagnóstico J&amp;D</h2>
+        <p id="estadoBusquedaPrincipal">
+            Escribe un síntoma para comenzar.
+        </p>
+    </div>
+
+    <div id="bloqueCausasPrincipal">
+        <h3>Respuesta del asistente</h3>
+        <div id="causasBusquedaPrincipal"
+             class="main-smart-causes"></div>
+    </div>
+
+    <div class="main-history-heading">
+        <h3>Casos anteriores del taller</h3>
+        <div id="casosBusquedaPrincipal"
+             class="main-smart-history"></div>
+    </div>
+
+    <p class="main-search-warning">
+        Las sugerencias son orientativas y no constituyen un diagnóstico
+        definitivo. Confirma las posibles causas mediante una inspección
+        técnica antes de realizar reparaciones.
+    </p>
+
+</section>
+<div class="actions">
+
+  <a href="historial.html" class="action">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+    Historial del vehículo
+  </a>
+  
+  <a href="Orden.html" class="action">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <path d="M8 2v4M16 2v4M4 10h16"/>
+    </svg>
+    Nueva orden de trabajo
+
+  </a>
+  <a href="Mantenimiento.html" class="action">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v20M2 12h20"/>
+    </svg>
+    Mantenimiento preventivo
+  </a>
+  
+  <a id="btnReportes" href="/reportes/abrir" class="action">
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v20M2 12h20"/>
+    </svg>
+    Reportes
+</a>
+
+
+
+</div>
+
+    <div class="footnote">SISTEMA WEB INTELIGENTE DE GESTIÓN Y DIAGNÓSTICO — J&amp;D</div>
+  </div>
+
+<script>
+    const hour = new Date().getHours();
+
+    let saludo;
+
+    if (hour < 12) {
+        saludo = "Buenos días";
+    } else if (hour < 19) {
+        saludo = "Buenas tardes";
+    } else {
+        saludo = "Buenas noches";
+    }
+
+    async function cargarUsuario() {
+        const etiqueta = document.getElementById("userRoleText");
+        const saludoPrincipal = document.getElementById("greetingText");
+
+        const botonReportes = document.getElementById("btnReportes");
+
+        try {
+            const respuesta = await fetch("/api/sesion", {
+                cache: "no-store"
+            });
+
+            if (!respuesta.ok) {
+                window.location.replace("/acceso.html");
+                return;
+            }
+
+            const datos = await respuesta.json();
+            const usuario = datos.usuario;
+
+            const rol = String(usuario.rol || "")
+                .trim()
+                .toLowerCase();
+
+            const esAdministrador =
+                rol === "administrador" || rol === "admin";
+
+            if (rol !== "administrador" &&
+                rol !== "admin" &&
+                rol !== "mecanico") {
+                window.location.replace("/acceso.html");
+                return;
+            }
+
+            const nombreRol = esAdministrador
+                ? "ADMINISTRADOR"
+                : "MECÁNICO";
+
+            etiqueta.textContent = "BIENVENIDO, " + nombreRol;
+
+            saludoPrincipal.textContent =
+                saludo + ", " +
+                (esAdministrador ? "Administrador" : "Mecánico");
+
+            // Ocultar el botón de reportes al mecánico
+            if (botonReportes) {
+                botonReportes.style.display =
+                    esAdministrador ? "flex" : "none";
+            }
+
+        } catch (error) {
+            etiqueta.textContent = "NO SE PUDO VERIFICAR LA SESIÓN";
+            console.error("Error al consultar la sesión:", error);
+        }
+    }
+
+    cargarUsuario();
+
+
+</script>
+
+<script>
+const btnReportesPIN = document.getElementById('btnReportes');
+const dialogPinReportes = document.getElementById('dialogPinReportes');
+const formPinReportes = document.getElementById('formPinReportes');
+const inputPinReportes = document.getElementById('pinReportes');
+const mensajePinReportes = document.getElementById('mensajePinReportes');
+const botonConfirmarPIN = document.getElementById('confirmarPinReportes');
+
+inputPinReportes.addEventListener('input', () => {
+    inputPinReportes.value = inputPinReportes.value
+        .replace(/\D/g, '')
+        .slice(0, 6);
+});
+
+if (btnReportesPIN) {
+    btnReportesPIN.addEventListener('click', (evento) => {
+        evento.preventDefault();
+
+        inputPinReportes.value = '';
+        mensajePinReportes.textContent = '';
+
+        dialogPinReportes.showModal();
+        inputPinReportes.focus();
+    });
+}
+
+document.getElementById('cancelarPinReportes')
+    .addEventListener('click', () => {
+        dialogPinReportes.close();
+    });
+
+formPinReportes.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+
+    const pin = inputPinReportes.value.trim();
+
+    if (!/^\d{6}$/.test(pin)) {
+        mensajePinReportes.textContent =
+            'Introduce un PIN de 6 dígitos.';
+        return;
+    }
+
+    botonConfirmarPIN.disabled = true;
+    botonConfirmarPIN.textContent = 'VERIFICANDO...';
+    mensajePinReportes.textContent = '';
+
+    try {
+        const respuesta = await fetch('/api/reportes/abrir', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store',
+            body: JSON.stringify({ pin })
+        });
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok || !datos.ok) {
+            mensajePinReportes.textContent =
+                datos.mensaje || 'No se pudo autorizar el acceso.';
+            inputPinReportes.value = '';
+            inputPinReportes.focus();
+            return;
+        }
+
+        dialogPinReportes.close();
+
+        window.location.href =
+            datos.destino || '/Reportes.html';
+
+    } catch (error) {
+        mensajePinReportes.textContent =
+            'No se pudo conectar con el servidor.';
+    } finally {
+        botonConfirmarPIN.disabled = false;
+        botonConfirmarPIN.textContent = 'Verificar PIN';
+    }
+});
+</script>
+<!-- BOTÓN FLOTANTE DE ASISTENCIA J&D -->
+<div class="support-widget">
+
+  <div class="support-menu" id="supportMenu" hidden>
+    <div class="support-header">
+      <strong>Asistencia J&D</strong>
+      <span>¿Cómo podemos ayudarte?</span>
+    </div>
+
+    <a
+      href="https://utp-team-odw5ueh7.atlassian.net/servicedesk/customer/portal/1"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="support-option"
+    >
+      <span class="support-icon">🎧</span>
+      <span class="support-text">
+        <strong>Soporte técnico</strong>
+        <small>Registrar una solicitud en Jira</small>
+      </span>
+      <span class="support-arrow">↗</span>
+    </a>
+
+    <!-- CORREO DE ASISTENCIA -->
+    <button
+      type="button"
+      class="support-option"
+      id="openEmailSupport"
+      style="width:100%;border:0;background:transparent;text-align:left;font-family:inherit;cursor:pointer;"
+    >
+      <span class="support-icon">✉</span>
+      <span class="support-text">
+        <strong>Correo de asistencia</strong>
+        <small>Copiar dirección de contacto</small>
+      </span>
+      <span class="support-arrow">↗</span>
+    </button>
+
+    <!-- VENTANA PARA COPIAR EL CORREO -->
+    <div id="emailSupportBox" hidden
+         style="padding:12px;margin-top:8px;border-radius:10px;background:#fff3e7;">
+
+      <p style="margin:0 0 10px;font-size:12px;color:#555;">
+        Correo de contacto:
+      </p>
+
+      <div id="supportEmail"
+           style="font-size:12px;overflow-wrap:anywhere;color:#25231f;margin-bottom:12px;">
+        support@utp-team-odw5ueh7.atlassian.net
+      </div>
+
+      <button
+        type="button"
+        id="copySupportEmail"
+        style="width:100%;padding:10px;border:0;border-radius:7px;background:#E8790A;color:white;font-weight:600;cursor:pointer;"
+      >
+        Copiar correo
+      </button>
+
+      <p id="copyEmailMessage"
+         role="status"
+         style="margin:8px 0 0;font-size:12px;color:#287443;">
+      </p>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="support-button"
+    id="supportButton"
+    aria-expanded="false"
+    aria-controls="supportMenu"
+    aria-label="Abrir menú de asistencia"
+  >
+    <svg class="support-main-icon" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 13v-2a8 8 0 0 1 16 0v2"/>
+      <path d="M4 13H3v4h4v-5H4"/>
+      <path d="M20 13h1v4h-4v-5h3"/>
+      <path d="M17 19c-1 1-2.5 1.5-5 1.5"/>
+    </svg>
+    <span>Soporte</span>
+    <span class="support-plus" id="supportPlus">+</span>
+  </button>
+
+</div>
+
+<script>
+  const supportButton = document.getElementById('supportButton');
+  const supportMenu = document.getElementById('supportMenu');
+  const supportPlus = document.getElementById('supportPlus');
+
+  supportButton.addEventListener('click', () => {
+    const isOpening = supportMenu.hidden;
+
+    supportMenu.hidden = !isOpening;
+    supportButton.setAttribute('aria-expanded', String(isOpening));
+    supportPlus.textContent = isOpening ? '×' : '+';
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.support-widget')) {
+      supportMenu.hidden = true;
+      supportButton.setAttribute('aria-expanded', 'false');
+      supportPlus.textContent = '+';
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      supportMenu.hidden = true;
+      supportButton.setAttribute('aria-expanded', 'false');
+      supportPlus.textContent = '+';
+      supportButton.focus();
+    }
+  });
+
+  // Mostrar u ocultar la dirección de correo
+  const openEmailSupport = document.getElementById('openEmailSupport');
+  const emailSupportBox = document.getElementById('emailSupportBox');
+
+  openEmailSupport.addEventListener('click', () => {
+    emailSupportBox.hidden = !emailSupportBox.hidden;
+  });
+
+  // Copiar correo al portapapeles
+  const copySupportEmail = document.getElementById('copySupportEmail');
+  const copyEmailMessage = document.getElementById('copyEmailMessage');
+
+  copySupportEmail.addEventListener('click', async () => {
+    const email = document.getElementById('supportEmail')
+      .textContent.trim();
+
+    try {
+      await navigator.clipboard.writeText(email);
+      copyEmailMessage.textContent = '¡Correo copiado correctamente!';
+    } catch (error) {
+      copyEmailMessage.textContent =
+        'No se pudo copiar automáticamente. Selecciona el correo y cópialo manualmente.';
+    }
+  });
+</script>
+<script src="/logout.js" defer></script>
+
+<script>
+(function () {
+    const buscador = document.getElementById('busquedaPrincipal');
+    const botonBuscar = document.getElementById('btnBuscarPrincipal');
+
+    const panel = document.getElementById('resultadoBusquedaPrincipal');
+    const estado = document.getElementById('estadoBusquedaPrincipal');
+
+    const bloqueCausas = document.getElementById('bloqueCausasPrincipal');
+    const listaCausas = document.getElementById('causasBusquedaPrincipal');
+    const listaCasos = document.getElementById('casosBusquedaPrincipal');
+
+    const botonesModo = document.querySelectorAll('[data-search-mode]');
+
+    if (!buscador || !botonBuscar || !panel) {
+        console.error('No se encontró el panel de búsqueda principal.');
+        return;
+    }
+
+    let modo = 'diagnostico';
+    let temporizador = null;
+    let numeroConsulta = 0;
+
+    // Insertar texto como texto, no como HTML:
+    // los datos de clientes y órdenes no deben interpretarse como código.
+    function crearElemento(etiqueta, clase, texto) {
+        const elemento = document.createElement(etiqueta);
+
+        if (clase) {
+            elemento.className = clase;
+        }
+
+        elemento.textContent = texto || '';
+
+        return elemento;
+    }
+
+    function mostrarVacio(contenedor, texto) {
+        contenedor.replaceChildren(
+            crearElemento('p', '', texto)
+        );
+    }
+
+    
+function mostrarCausas(causas) {
+    listaCausas.replaceChildren();
+
+    if (!causas.length) {
+        mostrarVacio(
+            listaCausas,
+            'No hay sugerencias disponibles para esta consulta.'
+        );
+        return;
+    }
+
+    causas.forEach(causa => {
+        const tarjeta = crearElemento(
+            'article',
+            'main-smart-cause'
+        );
+
+        tarjeta.append(
+            crearElemento('strong', '', causa.titulo),
+            crearElemento('p', '', causa.detalle)
+        );
+
+        const solucion = crearElemento(
+            'div',
+            'main-smart-solution'
+        );
+
+        solucion.append(
+            crearElemento(
+                'strong',
+                '',
+                'SOLUCIÓN SUGERIDA'
+            ),
+            crearElemento(
+                'p',
+                '',
+                causa.solucion ||
+                'Inspeccionar el sistema relacionado antes de decidir la reparación.'
+            )
+        );
+
+        tarjeta.appendChild(solucion);
+        listaCausas.appendChild(tarjeta);
+    });
+}
+
+/* ===== MOSTRAR HISTORIAL DE CASOS SIMILARES ===== */
+function mostrarCasos(casos) {
+    listaCasos.replaceChildren();
+
+    if (!Array.isArray(casos) || casos.length === 0) {
+        mostrarVacio(
+            listaCasos,
+            'No se encontraron reparaciones anteriores similares. Cuando existan diagnósticos y soluciones registrados, aparecerán aquí.'
+        );
+        return;
+    }
+
+    casos.forEach(caso => {
+        const tarjeta = crearElemento('article', 'main-smart-case');
+
+        const titulo = crearElemento(
+            'strong',
+            '',
+            `Orden #${caso.id} · ${caso.placa || 'Sin placa'}`
+        );
+
+        const fecha = crearElemento(
+            'small',
+            '',
+            caso.fecha || 'Fecha no registrada'
+        );
+
+        const vehiculo = [
+            caso.marcaModelo,
+            caso.anio ? `Año ${caso.anio}` : '',
+            caso.kilometraje != null
+                ? Number(caso.kilometraje).toLocaleString('es-PE') + ' km'
+                : ''
+        ].filter(Boolean).join(' · ');
+
+        const sintoma = crearElemento(
+            'p',
+            '',
+            'Síntoma: ' + (caso.sintoma || 'No registrado')
+        );
+
+        const datosSolucion = [
+            caso.diagnostico ? 'Diagnóstico: ' + caso.diagnostico : '',
+            caso.resultadoDiagnostico ? 'Resultado: ' + caso.resultadoDiagnostico : '',
+            caso.reparacion ? 'Reparación realizada: ' + caso.reparacion : '',
+            caso.observaciones ? 'Observaciones: ' + caso.observaciones : ''
+        ].filter(Boolean);
+
+        const bloqueSolucion = crearElemento('div', 'main-smart-solution');
+
+        bloqueSolucion.append(
+            crearElemento('strong', '', 'DIAGNÓSTICO Y SOLUCIÓN REGISTRADOS'),
+            crearElemento(
+                'p',
+                '',
+                datosSolucion.length
+                    ? datosSolucion.join('\n')
+                    : 'No hay una reparación documentada para esta orden.'
+            )
+        );
+
+        tarjeta.append(
+            titulo,
+            fecha,
+            crearElemento('p', '', 'Vehículo: ' + (vehiculo || 'No registrado')),
+            sintoma,
+            bloqueSolucion
+        );
+
+        listaCasos.appendChild(tarjeta);
+    });
+}
+function mostrarRespuestaIA(respuesta) {
+    listaCausas.replaceChildren();
+
+    const tarjeta = crearElemento(
+        "article",
+        "main-smart-cause"
+    );
+
+    const titulo = crearElemento(
+        "strong",
+        "",
+        "RESPUESTA DEL ASISTENTE J&D"
+    );
+
+    const texto = crearElemento(
+        "p",
+        "",
+        respuesta || "No se recibió una respuesta."
+    );
+
+    texto.style.whiteSpace = "pre-line";
+
+    tarjeta.append(titulo, texto);
+    listaCausas.appendChild(tarjeta);
+}
+    function seleccionarModo(nuevoModo) {
+        modo = nuevoModo;
+
+        botonesModo.forEach(boton => {
+            const activo = boton.dataset.searchMode === modo;
+
+            boton.classList.toggle('active', activo);
+            boton.setAttribute('aria-pressed', String(activo));
+        });
+
+        bloqueCausas.hidden = modo === 'historial';
+
+        const consulta = buscador.value.trim();
+
+        if (consulta.length >= 3) {
+            ejecutarBusqueda();
+        }
+    }
+
+    botonesModo.forEach(boton => {
+        boton.addEventListener('click', () => {
+            seleccionarModo(boton.dataset.searchMode);
+        });
+    });
+
+async function ejecutarBusqueda() {
+    const consulta = buscador.value.trim();
+    const actual = ++numeroConsulta;
+
+    if (consulta.length < 3) {
+        panel.hidden = true;
+        return;
+    }
+
+    panel.hidden = false;
+    bloqueCausas.hidden = modo === "historial";
+
+    estado.textContent = "Consultando al asistente...";
+
+    mostrarVacio(listaCausas, "");
+    mostrarVacio(listaCasos, "");
+
+    try {
+        // Si se seleccionó Historial, buscar solamente órdenes anteriores.
+        if (modo === "historial") {
+            const respuestaHistorial = await fetch(
+                "/api/busqueda-inteligente?q=" +
+                encodeURIComponent(consulta),
+                {
+                    credentials: "same-origin",
+                    cache: "no-store"
+                }
+            );
+
+            const datosHistorial = await respuestaHistorial
+                .json()
+                .catch(() => ({}));
+
+            if (actual !== numeroConsulta) return;
+
+            if (!respuestaHistorial.ok) {
+                throw new Error(
+                    datosHistorial.mensaje ||
+                    "No se pudo consultar el historial."
+                );
+            }
+
+            mostrarCasos(datosHistorial.coincidencias || []);
+
+            estado.textContent =
+                "Historial consultado. " +
+                (datosHistorial.coincidencias || []).length +
+                " caso(s) encontrado(s).";
+
+            return;
+        }
+
+        // En modo Diagnóstico, enviar la pregunta a la IA.
+        const respuestaIA = await fetch("/api/asistente-ia", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "same-origin",
+            cache: "no-store",
+            body: JSON.stringify({
+                pregunta: consulta
+            })
+        });
+
+        const datosIA = await respuestaIA
+            .json()
+            .catch(() => ({}));
+
+        if (actual !== numeroConsulta) return;
+
+        if (!respuestaIA.ok) {
+            if (respuestaIA.status === 401) {
+                throw new Error(
+                    "Tu sesión ha caducado. Inicia sesión nuevamente."
+                );
+            }
+
+            throw new Error(
+                datosIA.mensaje ||
+                "No se pudo obtener una respuesta de la IA."
+            );
+        }
+
+        mostrarRespuestaIA(datosIA.respuesta);
+
+        estado.textContent =
+            "Respuesta generada. Consultando antecedentes del taller...";
+
+        // Consultar los casos anteriores por separado.
+        // Si falla el historial, se conserva la respuesta de la IA.
+        try {
+            const respuestaHistorial = await fetch(
+                "/api/busqueda-inteligente?q=" +
+                encodeURIComponent(consulta),
+                {
+                    credentials: "same-origin",
+                    cache: "no-store"
+                }
+            );
+
+            const datosHistorial = await respuestaHistorial
+                .json()
+                .catch(() => ({}));
+
+            if (actual !== numeroConsulta) return;
+
+            if (respuestaHistorial.ok) {
+                mostrarCasos(datosHistorial.coincidencias || []);
+            } else {
+                mostrarVacio(
+                    listaCasos,
+                    "La respuesta está disponible, pero no se pudo consultar el historial."
+                );
+            }
+        } catch (errorHistorial) {
+            mostrarVacio(
+                listaCasos,
+                "La respuesta está disponible, pero el historial no está accesible."
+            );
+        }
+
+        estado.textContent = "Respuesta generada correctamente.";
+
+    } catch (error) {
+        if (actual !== numeroConsulta) return;
+
+        estado.textContent = error.message;
+
+        mostrarVacio(
+            listaCausas,
+            "No se pudo generar una respuesta: " + error.message
+        );
+
+        mostrarVacio(
+            listaCasos,
+            "No se consultó el historial."
+        );
+    }
+}
+
+  buscador.addEventListener("keydown", evento => {
+    if (evento.key === "Enter") {
+        evento.preventDefault();
+        ejecutarBusqueda();
+    }
+});
+
+botonBuscar.addEventListener("click", ejecutarBusqueda);
+})();
+</script>
+
+</body>
+</html>

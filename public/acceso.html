@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="responsive.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso al Taller Mecánico</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #14110c;
+            color: #f3ece0;
+            font-family: Arial, sans-serif;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 390px;
+            padding: 32px 26px;
+            background: #1b1710;
+            border: 1px solid #3a3122;
+            border-radius: 16px;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            font-size: 26px;
+        }
+
+        .subtitulo {
+            margin: 12px 0 28px;
+            text-align: center;
+            color: #a79d8a;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d8cdbb;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #51442f;
+            border-radius: 8px;
+            background: #14110c;
+            color: white;
+            font-size: 18px;
+            letter-spacing: 2px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #f08a1c;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #f08a1c;
+            color: #14110c;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #ff9e35;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #mensaje {
+            min-height: 20px;
+            margin-top: 14px;
+            text-align: center;
+            color: #ef5b4b;
+            font-size: 13px;
+        }
+
+        .pie {
+            margin-top: 24px;
+            color: #847969;
+            text-align: center;
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="contenedor">
+
+        <div class="logo">🔧</div>
+
+        <h1>TALLER MECÁNICO</h1>
+
+        <p class="subtitulo">
+            Ingresa tu DNI para acceder al sistema
+        </p>
+
+
+<form id="formAcceso">
+
+    <label for="dni">Número de DNI</label>
+
+    <input
+        type="text"
+        id="dni"
+        name="dni"
+        placeholder="Ingresa los 8 dígitos de tu DNI"
+        maxlength="8"
+        inputmode="numeric"
+        autocomplete="username"
+        required
+    >
+
+    <label for="password">Contraseña</label>
+
+    <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Ingresa tu contraseña"
+        autocomplete="current-password"
+        required
+    >
+
+    <p id="mensaje" role="alert"></p>
+
+    <button type="submit" id="btnIngresar">
+        INICIAR SESIÓN
+    </button>
+
+</form>
+
+
+        <div class="pie">
+            SISTEMA DE GESTIÓN · MECÁNICA AUTOMOTRIZ J&D
+        </div>
+
+    </main>
+
+    <script>
+        const formulario = document.getElementById('formAcceso');
+        const campoDni = document.getElementById('dni');
+        const campoPassword = document.getElementById('password');
+        const boton = document.getElementById('btnIngresar');
+        const mensaje = document.getElementById('mensaje');
+
+        campoDni.addEventListener('input', () => {
+            campoDni.value = campoDni.value
+                .replace(/\D/g, '')
+                .slice(0, 8);
+
+            mensaje.textContent = '';
+        });
+
+        formulario.addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+
+            const dni = campoDni.value.trim();
+            const password = campoPassword.value;
+            if (!/^\d{8}$/.test(dni)) {
+                mensaje.textContent =
+                    'Ingresa un DNI válido de 8 dígitos.';
+                return;
+            }
+
+            boton.disabled = true;
+            boton.textContent = 'VERIFICANDO...';
+            mensaje.textContent = '';
+
+            try {
+                const respuesta = await fetch('/api/login-dni', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ dni, password })
+                });
+
+                const datos = await respuesta.json();
+
+                if (!respuesta.ok || !datos.ok) {
+                    mensaje.textContent = datos.mensaje ||
+                        'No se pudo iniciar sesión.';
+                    return;
+                }
+
+                window.location.href = '/index.html';
+
+            } catch (error) {
+                mensaje.textContent =
+                    'No se pudo conectar con el servidor.';
+            } finally {
+                boton.disabled = false;
+                boton.textContent = 'INICIAR SESIÓN';
+            }
+        });
+    </script>
+</body>
+</html>

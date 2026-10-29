@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mantenimiento Preventivo · J&D Taller Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="Mantenimiento.css">
+<link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <header class="top">
+    <div class="eyebrow"><span class="dot"></span>MECÁNICA AUTOMOTRIZ J&amp;D · TALLER DIGITAL</div>
+    <div class="top-row">
+      <h1 class="title">
+        <svg class="wrench" viewBox="0 0 24 24" fill="none" stroke="#E8790A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M2 12h20"/>
+        </svg>
+        Mantenimiento preventivo
+      </h1>
+      <div class="top-actions">
+        <a href="index.html" class="btn-secondary">← Inicio</a>
+        <button type="button" class="btn-primary" id="btnNuevoMant">+ Nuevo mantenimiento</button>
+      </div>
+    </div>
+    <p class="subline">Programa y controla los servicios preventivos de cada vehículo antes de que fallen.</p>
+  </header>
+
+  <!-- ===== ESTADÍSTICAS ===== -->
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card stat-programado">
+      <div class="stat-value" id="statProgramado">0</div>
+      <div class="stat-label">Programados</div>
+    </div>
+    <div class="stat-card stat-vencido">
+      <div class="stat-value" id="statVencido">0</div>
+      <div class="stat-label">Vencidos</div>
+    </div>
+    <div class="stat-card stat-realizado">
+      <div class="stat-value" id="statRealizado">0</div>
+      <div class="stat-label">Realizados</div>
+    </div>
+  </section>
+
+  <!-- ===== FILTROS ===== -->
+  <section class="filters">
+    <div class="fake-input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#A6A092" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="M21 21l-4.3-4.3"/>
+      </svg>
+      <input type="text" id="buscador" placeholder="Buscar por placa o tipo de mantenimiento…">
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <button type="button" class="chip active" data-estado="todas">Todos</button>
+      <button type="button" class="chip" data-estado="Programado">Programados</button>
+      <button type="button" class="chip" data-estado="Vencido">Vencidos</button>
+      <button type="button" class="chip" data-estado="Realizado">Realizados</button>
+    </div>
+  </section>
+
+  <!-- ===== LISTA DE MANTENIMIENTOS ===== -->
+  <section class="order-list" id="mantList">
+    <!-- Las tarjetas se generan dinámicamente aquí -->
+  </section>
+
+  <!-- ===== ESTADO VACÍO ===== -->
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v20M2 12h20"/>
+    </svg>
+    <p>Todavía no hay mantenimientos registrados</p>
+    <span>Crea el primero con el botón "+ Nuevo mantenimiento"</span>
+  </div>
+
+  <div class="footnote">SISTEMA WEB INTELIGENTE DE GESTIÓN Y DIAGNÓSTICO — J&amp;D</div>
+</div>
+
+<!-- ===== MODAL: MANTENIMIENTO PREVENTIVO ===== -->
+<div class="modal-overlay" id="modalMantenimiento" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalMantTitle">
+    <div class="modal-head">
+      <h2 id="modalMantTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M2 12h20"/>
+        </svg>
+        Mantenimiento preventivo
+      </h2>
+      <button type="button" class="modal-close" data-close="modalMantenimiento" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <form id="formMantenimiento" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label for="mantPlaca">Placa / VIN <span class="req">*</span></label>
+          <input type="text" id="mantPlaca" name="placa" maxlength="10" placeholder="Ej. AQ-2024-HX" required>
+        </div>
+        <div class="field">
+          <label for="mantTipo">Tipo de mantenimiento <span class="req">*</span></label>
+          <select id="mantTipo" name="tipo" required>
+            <option value="" selected disabled>Selecciona…</option>
+            <option value="Cambio de aceite y filtro">Cambio de aceite y filtro</option>
+            <option value="Revisión de frenos">Revisión de frenos</option>
+            <option value="Alineación y balanceo">Alineación y balanceo</option>
+            <option value="Revisión general anual">Revisión general anual</option>
+            <option value="Cambio de batería">Cambio de batería</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mantKmActual">Kilometraje actual</label>
+          <input type="number" id="mantKmActual" name="kmActual" min="0" placeholder="Ej. 87340">
+        </div>
+        <div class="field">
+          <label for="mantKmProximo">Próximo mantenimiento (km)</label>
+          <input type="number" id="mantKmProximo" name="kmProximo" min="0" placeholder="Ej. 92340">
+        </div>
+        <div class="field">
+          <label for="mantFecha">Fecha programada</label>
+          <input type="date" id="mantFecha" name="fechaProgramada">
+        </div>
+        <div class="field">
+          <label for="mantEstado">Estado</label>
+          <select id="mantEstado" name="estado">
+            <option value="Programado" selected>Programado</option>
+            <option value="Realizado">Realizado</option>
+          </select>
+        </div>
+        <div class="field field-full">
+          <label for="mantNotas">Notas</label>
+          <textarea id="mantNotas" name="notas" rows="3" placeholder="Observaciones adicionales…"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" data-close="modalMantenimiento">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar mantenimiento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== TOAST DE CONFIRMACIÓN ===== -->
+<div class="toast" id="toast" aria-live="polite"></div>
+
+<script src="api.js"></script>
+<script>
+  let mantenimientos = [];
+
+  function hoyISO(){ return new Date().toISOString().slice(0,10); }
+  function formatearFecha(iso){
+    if(!iso) return 'Sin fecha';
+    const [y,m,d] = iso.split('-');
+    return d + '/' + m + '/' + y;
+  }
+
+  // Estado "real" del mantenimiento (deriva Vencido si ya pasó la fecha y no está Realizado)
+  function estadoReal(m){
+    if (m.estado === 'Realizado') return 'Realizado';
+    if (m.fechaProgramada && m.fechaProgramada < hoyISO()) return 'Vencido';
+    return 'Programado';
+  }
+
+  /* ===================== CARGA DESDE LA BASE DE DATOS ===================== */
+  async function cargarMantenimientos(){
+    try{
+      mantenimientos = await api('/api/mantenimientos');
+    }catch(err){
+      mantenimientos = [];
+      showToast('⚠ ' + err.message);
+    }
+    render();
+  }
+
+  /* ===================== MODAL ===================== */
+  function openModal(id){
+    const overlay = document.getElementById(id);
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    const firstInput = overlay.querySelector('input, select, textarea');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
+  }
+  function closeModal(id){
+    const overlay = document.getElementById(id);
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('btnNuevoMant').addEventListener('click', () => openModal('modalMantenimiento'));
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close')));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(o => closeModal(o.id));
+  });
+
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  /* ===================== CREAR MANTENIMIENTO ===================== */
+  const formMantenimiento = document.getElementById('formMantenimiento');
+  formMantenimiento.addEventListener('submit', async function(e){
+    e.preventDefault();
+
+    const placa = document.getElementById('mantPlaca').value.trim();
+    const tipo = document.getElementById('mantTipo').value;
+
+    if (!placa || !tipo){
+      showToast('⚠ Completa la placa/VIN y el tipo de mantenimiento.');
+      return;
+    }
+
+    const btn = formMantenimiento.querySelector('[type="submit"]');
+    btn.disabled = true;
+    try{
+      await api('/api/mantenimientos', {
+        method: 'POST',
+        body: {
+          placa: placa.toUpperCase(),
+          tipo: tipo,
+          kmActual: document.getElementById('mantKmActual').value,
+          kmProximo: document.getElementById('mantKmProximo').value,
+          fechaProgramada: document.getElementById('mantFecha').value,
+          estado: document.getElementById('mantEstado').value,
+          notas: document.getElementById('mantNotas').value.trim()
+        }
+      });
+      formMantenimiento.reset();
+      closeModal('modalMantenimiento');
+      showToast('✔ Mantenimiento registrado para ' + placa.toUpperCase());
+      await cargarMantenimientos();
+    }catch(err){
+      showToast('⚠ ' + err.message);
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  /* ===================== RENDER DE LISTA ===================== */
+  let filtroEstado = 'todas';
+  let filtroTexto = '';
+
+  document.getElementById('filterChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filtroEstado = chip.getAttribute('data-estado');
+    render();
+  });
+
+  document.getElementById('buscador').addEventListener('input', (e) => {
+    filtroTexto = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  function badgeClaseEstado(estado){
+    if (estado === 'Realizado') return 'badge badge-completada';
+    if (estado === 'Vencido') return 'badge badge-urgente';
+    return 'badge badge-proceso';
+  }
+
+  function crearCardMantenimiento(m){
+    const estado = estadoReal(m);
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    card.innerHTML = `
+      <div class="order-card-head">
+        <div class="order-plate">${esc(m.placa)}</div>
+        <div class="order-date">📅 ${esc(formatearFecha(m.fechaProgramada))}</div>
+      </div>
+      <div class="order-sub">
+        <span>${esc(m.tipo)}</span>
+        ${m.kmActual ? `<span>· Actual: ${Number(m.kmActual).toLocaleString('es-PE')} km</span>` : ''}
+        ${m.kmProximo ? `<span>· Próximo: ${Number(m.kmProximo).toLocaleString('es-PE')} km</span>` : ''}
+      </div>
+      <div class="order-badges">
+        <span class="${badgeClaseEstado(estado)}">${esc(estado)}</span>
+      </div>
+      ${m.notas ? `<div class="order-sintoma"><strong>Notas:</strong> ${esc(m.notas)}</div>` : ''}
+      <div class="order-actions">
+        <select class="estado-select" data-id="${m.id}">
+          <option value="Programado" ${m.estado==='Programado'?'selected':''}>Programado</option>
+          <option value="Realizado" ${m.estado==='Realizado'?'selected':''}>Realizado</option>
+        </select>
+        <button type="button" class="btn-delete" data-id="${m.id}">Eliminar</button>
+      </div>
+    `;
+    return card;
+  }
+
+  function render(){
+    const list = document.getElementById('mantList');
+    const empty = document.getElementById('emptyState');
+    list.innerHTML = '';
+
+    document.getElementById('statTotal').textContent = mantenimientos.length;
+    document.getElementById('statProgramado').textContent = mantenimientos.filter(m => estadoReal(m) === 'Programado').length;
+    document.getElementById('statVencido').textContent = mantenimientos.filter(m => estadoReal(m) === 'Vencido').length;
+    document.getElementById('statRealizado').textContent = mantenimientos.filter(m => estadoReal(m) === 'Realizado').length;
+
+    const filtradas = mantenimientos.filter(m => {
+      const coincideEstado = filtroEstado === 'todas' || estadoReal(m) === filtroEstado;
+      const texto = (m.placa + ' ' + m.tipo).toLowerCase();
+      const coincideTexto = !filtroTexto || texto.includes(filtroTexto);
+      return coincideEstado && coincideTexto;
+    });
+
+    if (mantenimientos.length === 0){
+      empty.style.display = 'flex';
+      empty.querySelector('p').textContent = 'Todavía no hay mantenimientos registrados';
+      empty.querySelector('span').textContent = 'Crea el primero con el botón "+ Nuevo mantenimiento"';
+    } else if (filtradas.length === 0){
+      empty.style.display = 'flex';
+      empty.querySelector('p').textContent = 'Ningún mantenimiento coincide con tu búsqueda';
+      empty.querySelector('span').textContent = 'Prueba con otro filtro o término';
+    } else {
+      empty.style.display = 'none';
+      filtradas.forEach(m => list.appendChild(crearCardMantenimiento(m)));
+    }
+  }
+
+  document.getElementById('mantList').addEventListener('change', async (e) => {
+    if (!e.target.classList.contains('estado-select')) return;
+    const id = e.target.getAttribute('data-id');
+    const nuevoEstado = e.target.value;
+    try{
+      await api('/api/mantenimientos/' + id + '/estado', { method: 'PUT', body: { estado: nuevoEstado } });
+      showToast('Estado actualizado → ' + nuevoEstado);
+    }catch(err){
+      showToast('⚠ ' + err.message);
+    }
+    await cargarMantenimientos();
+  });
+
+  document.getElementById('mantList').addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('btn-delete')) return;
+    if (!confirm('¿Eliminar este mantenimiento?')) return;
+    const id = e.target.getAttribute('data-id');
+    try{
+      await api('/api/mantenimientos/' + id, { method: 'DELETE' });
+      showToast('Mantenimiento eliminado');
+    }catch(err){
+      showToast('⚠ ' + err.message);
+    }
+    await cargarMantenimientos();
+  });
+
+  // Si venimos desde otra página pidiendo abrir el modal directamente
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('abrir') === 'mantenimiento') openModal('modalMantenimiento');
+
+  cargarMantenimientos();
+</script>
+<script src="/logout.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial del Vehículo - J&D Taller</title>
+  <link rel="stylesheet" href="historial.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1 class="header-title">Historial del Vehículo</h1>
+    <p class="header-subtitle">Registro completo de reparaciones y diagnósticos</p>
+  </div>
+
+  <!-- Buscador por placa -->
+  <form class="search-form" id="formBuscar">
+    <input type="text" class="search-input" id="inputPlaca" maxlength="10" placeholder="Buscar por placa (ej. AQ-2024-HX)">
+    <button type="submit" class="btn btn-primary">Buscar</button>
+  </form>
+
+  <div id="contenido">
+    <div class="empty-state">Cargando historial…</div>
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="action-buttons">
+    <a href="index.html" class="btn">← Volver</a>
+    <a href="Orden.html?abrir=orden" class="btn btn-primary">+ Nueva Orden de Trabajo</a>
+    <a href="Reporte.html" class="btn">Descargar Reporte</a>
+  </div>
+
+</div>
+
+<script src="api.js"></script>
+<script>
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function fechaLarga(iso){
+    if(!iso) return 'Sin fecha';
+    const [y,m,d] = iso.split('-');
+    return parseInt(d,10) + ' de ' + MESES[parseInt(m,10)-1] + ' ' + y;
+  }
+
+  function mostrarMensaje(texto, esError){
+    document.getElementById('contenido').innerHTML =
+      '<div class="' + (esError ? 'error-tag' : 'empty-state') + '">' + esc(texto) + '</div>';
+  }
+
+  function tarjetaOrden(o){
+    const titulo = o.reparaciones.length && o.reparaciones[0].descripcion
+      ? o.reparaciones[0].descripcion
+      : 'Orden de trabajo #' + o.id;
+
+    const sintomas = o.sintomas.length
+      ? `<div class="symptom-tag"><strong>Síntoma:</strong> ${o.sintomas.map(esc).join(' · ')}</div>` : '';
+
+    const diagnosticos = o.diagnosticos.map(d => {
+      const partes = [d.descripcion, d.resultado].filter(Boolean).map(esc).join('. ');
+      return partes ? `<div class="diagnosis-tag"><strong>Diagnóstico:</strong> ${partes}</div>` : '';
+    }).join('');
+
+    const reparaciones = o.reparaciones.map(r => {
+      const repuestos = r.repuestos.length
+        ? ' — Repuestos: ' + r.repuestos.map(p => esc(p.nombre) + ' x' + esc(p.cantidad)).join(', ')
+        : '';
+      const texto = [r.descripcion, r.observaciones].filter(Boolean).map(esc).join('. ');
+      return (texto || repuestos)
+        ? `<div class="repair-tag"><strong>Reparación:</strong> ${texto}${repuestos}</div>` : '';
+    }).join('');
+
+    return `
+      <div class="repair-item">
+        <div class="repair-date">📅 ${esc(fechaLarga(o.fecha))}</div>
+        <div class="repair-description">${esc(titulo)}</div>
+        <div style="margin: 10px 0;">
+          <span class="repair-label">ESTADO: ${esc(o.estado)}</span>
+          <span class="repair-label">PRIORIDAD: ${esc(o.prioridad)}</span>
+        </div>
+        ${sintomas}${diagnosticos}${reparaciones}
+      </div>`;
+  }
+
+  async function cargarHistorial(placa){
+    mostrarMensaje('Cargando historial…', false);
+    try{
+      const data = await api('/api/historial' + (placa ? '?placa=' + encodeURIComponent(placa) : ''));
+      const v = data.vehiculo;
+      const km = v.kilometraje != null ? Number(v.kilometraje).toLocaleString('es-PE') + ' km' : '—';
+
+      document.getElementById('contenido').innerHTML = `
+        <div class="vehicle-card">
+          <div class="vehicle-info">
+            <div class="info-item"><div class="info-label">Placa</div><div class="info-value">${esc(v.placa)}</div></div>
+            <div class="info-item"><div class="info-label">Marca / Modelo</div><div class="info-value">${esc(v.marcaModelo || '—')}</div></div>
+            <div class="info-item"><div class="info-label">Año</div><div class="info-value">${esc(v.anio || '—')}</div></div>
+            <div class="info-item"><div class="info-label">Kilometraje</div><div class="info-value">${esc(km)}</div></div>
+          </div>
+          <div class="owner-section">
+            <div class="owner-title">Propietario</div>
+            <div class="owner-name">${esc(v.propietario || 'Sin registrar')}</div>
+          </div>
+        </div>
+
+        <div class="repair-history">
+          <h2 class="history-title">Órdenes de Trabajo</h2>
+          ${data.ordenes.length
+              ? data.ordenes.map(tarjetaOrden).join('')
+              : '<div class="empty-state">Este vehículo todavía no tiene órdenes de trabajo.</div>'}
+        </div>`;
+      document.getElementById('inputPlaca').value = v.placa;
+    }catch(err){
+      mostrarMensaje(err.message, true);
+    }
+  }
+
+  document.getElementById('formBuscar').addEventListener('submit', (e) => {
+    e.preventDefault();
+    cargarHistorial(document.getElementById('inputPlaca').value.trim());
+  });
+
+  const placaInicial = new URLSearchParams(window.location.search).get('placa') || '';
+  cargarHistorial(placaInicial.trim());
+</script>
+<script src="/logout.js" defer></script>
+</body>
+</html>

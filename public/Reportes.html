@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reportes · J&D Taller Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="Reporte.css">
+<link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <header class="top">
+    <div class="eyebrow"><span class="dot"></span>MECÁNICA AUTOMOTRIZ J&amp;D · TALLER DIGITAL</div>
+    <div class="top-row">
+      <h1 class="title">
+        <svg class="wrench" viewBox="0 0 24 24" fill="none" stroke="#E8790A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19h16M4 15l4-4 4 3 6-7"/>
+        </svg>
+        Reportes
+      </h1>
+      <div class="top-actions no-print">
+        <span id="reportesTimer" class="reportes-timer">
+    TIEMPO RESTANTE: 02:00
+</span>
+        <a href="index.html" class="btn-secondary">← Inicio</a>
+        <button type="button" class="btn-secondary" id="btnCsv">Descargar CSV</button>
+        <button type="button" class="btn-primary" id="btnImprimir">Imprimir</button>
+        <button type="button" class="btn-primary onclick="realizarBackup()"> Realizar copia de seguridad</button>
+      </div>
+    </div>
+    <p class="subline">Vista consolidada de todas las órdenes de trabajo y mantenimientos preventivos del taller.</p>
+  </header>
+
+<script>
+async function realizarBackup() {
+
+    const confirmar = confirm(
+        "¿Deseas realizar una copia de seguridad de la base de datos?"
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const respuesta = await fetch('/api/backup');
+        const datos = await respuesta.json();
+
+        if (datos.success) {
+            alert(
+                "✅ Copia de seguridad realizada correctamente.\n\n" +
+                "Archivo: " + datos.archivo
+            );
+        } else {
+            alert(
+                "❌ No se pudo realizar la copia de seguridad.\n\n" +
+                datos.mensaje
+            );
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("❌ Error al comunicarse con el servidor.");
+    }
+}
+</script>
+  <!-- ===== ESTADÍSTICAS ===== -->
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Total registros</div>
+    </div>
+    <div class="stat-card stat-ordenes">
+      <div class="stat-value" id="statOrdenes">0</div>
+      <div class="stat-label">Órdenes de trabajo</div>
+    </div>
+    <div class="stat-card stat-mant">
+      <div class="stat-value" id="statMant">0</div>
+      <div class="stat-label">Mantenimientos</div>
+    </div>
+    <div class="stat-card stat-abiertos">
+      <div class="stat-value" id="statAbiertos">0</div>
+      <div class="stat-label">Pendientes / vencidos</div>
+    </div>
+  </section>
+
+  <!-- ===== FILTROS ===== -->
+  <section class="filters no-print">
+    <div class="fake-input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#A6A092" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="M21 21l-4.3-4.3"/>
+      </svg>
+      <input type="text" id="buscador" placeholder="Buscar por placa, cliente o tipo…">
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <button type="button" class="chip active" data-tipo="todos">Todos</button>
+      <button type="button" class="chip" data-tipo="orden">Órdenes de trabajo</button>
+      <button type="button" class="chip" data-tipo="mantenimiento">Mantenimientos</button>
+    </div>
+  </section>
+
+<!-- ===== CONSTANCIAS ENVIADAS POR LOS MECÁNICOS ===== -->
+
+<section class="constancias-section">
+    <div class="constancias-heading">
+        <div>
+            <h2>Constancias de reparación</h2>
+            <p>Documentos enviados por los mecánicos para revisión.</p>
+        </div>
+
+        <button type="button"
+                class="btn-secondary no-print"
+                id="btnActualizarConstancias">
+            Actualizar
+        </button>
+    </div>
+
+    <div class="constancias-count" id="contadorConstancias">
+        Cargando constancias...
+    </div>
+
+    <div id="listaConstancias" class="constancias-list"
+         aria-live="polite"></div>
+
+    <div id="vacioConstancias" class="constancias-empty" hidden>
+        <strong>No hay constancias recibidas</strong>
+        <span>Cuando un mecánico envíe una constancia, aparecerá aquí.</span>
+    </div>
+</section>
+
+  <!-- ===== LISTA DE REPORTES ===== -->
+  <section class="report-list" id="reportList">
+    <!-- Las filas se generan dinámicamente aquí -->
+  </section>
+
+  <!-- ===== ESTADO VACÍO ===== -->
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19h16M4 15l4-4 4 3 6-7"/>
+    </svg>
+    <p>Todavía no hay nada que reportar</p>
+    <span>Crea órdenes de trabajo o mantenimientos para verlos aquí</span>
+  </div>
+
+  <div class="footnote">SISTEMA WEB INTELIGENTE DE GESTIÓN Y DIAGNÓSTICO — J&amp;D · Reporte generado <span id="fechaGenerado"></span></div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  let ordenes = [];
+  let mantenimientos = [];
+
+  function hoyISO(){ return new Date().toISOString().slice(0,10); }
+  function formatearFecha(iso){
+    if(!iso) return 'Sin fecha';
+    const [y,m,d] = iso.split('-');
+    return d + '/' + m + '/' + y;
+  }
+
+  function estadoRealMant(m){
+    if (m.estado === 'Realizado') return 'Realizado';
+    if (m.fechaProgramada && m.fechaProgramada < hoyISO()) return 'Vencido';
+    return 'Programado';
+  }
+
+  function badgeClaseEstado(estado){
+    if (estado === 'Completada' || estado === 'Realizado') return 'badge badge-completada';
+    if (estado === 'Vencido' || estado === 'Urgente') return 'badge badge-urgente';
+    if (estado === 'En proceso') return 'badge badge-proceso';
+    return 'badge badge-pendiente';
+  }
+
+  /* ===================== CARGA DESDE LA BASE DE DATOS ===================== */
+  async function cargarDatos(){
+    try{
+      const resultados = await Promise.all([
+        api('/api/reportes/ordenes'),
+        api('/api/reportes/mantenimientos')
+      ]);
+      ordenes = resultados[0];
+      mantenimientos = resultados[1];
+    }catch(err){
+      ordenes = [];
+      mantenimientos = [];
+      const empty = document.getElementById('emptyState');
+      empty.style.display = 'flex';
+      empty.querySelector('p').textContent = 'No se pudo cargar el reporte';
+      empty.querySelector('span').textContent = err.message;
+      return;
+    }
+    render();
+  }
+
+  // Une órdenes y mantenimientos en una sola lista de registros
+  function construirRegistros(){
+    const listaOrdenes = ordenes.map(o => ({
+      tipo: 'orden',
+      tipoLabel: 'Orden de trabajo',
+      placa: o.placa,
+      cliente: o.cliente,
+      detalle: o.marcaModelo || '',
+      referencia: o.sintoma || '',
+      referenciaLabel: 'Síntoma',
+      estado: o.estado,
+      fecha: o.fecha,
+      prioridad: o.prioridad
+    }));
+
+    const listaMant = mantenimientos.map(m => ({
+      tipo: 'mantenimiento',
+      tipoLabel: 'Mantenimiento preventivo',
+      placa: m.placa,
+      cliente: '',
+      detalle: m.tipo || '',
+      referencia: m.notas || (m.fechaProgramada ? 'Programado para ' + formatearFecha(m.fechaProgramada) : ''),
+      referenciaLabel: 'Notas',
+      estado: estadoRealMant(m),
+      fecha: m.fecha,
+      prioridad: ''
+    }));
+
+    return listaOrdenes.concat(listaMant).sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  }
+
+  /* ===================== FILTROS ===================== */
+  let filtroTipo = 'todos';
+  let filtroTexto = '';
+
+  document.getElementById('filterChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filtroTipo = chip.getAttribute('data-tipo');
+    render();
+  });
+
+  document.getElementById('buscador').addEventListener('input', (e) => {
+    filtroTexto = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  /* ===================== RENDER ===================== */
+  function crearFila(r){
+    const row = document.createElement('div');
+    row.className = 'report-row';
+    row.innerHTML = `
+      <div class="report-tag ${r.tipo === 'orden' ? 'tag-orden' : 'tag-mant'}">${esc(r.tipoLabel)}</div>
+      <div class="report-main">
+        <div class="report-head">
+          <span class="report-plate">${esc(r.placa)}</span>
+          ${r.cliente ? `<span class="report-cliente">${esc(r.cliente)}</span>` : ''}
+        </div>
+        ${r.detalle ? `<div class="report-detalle">${esc(r.detalle)}</div>` : ''}
+        ${r.referencia ? `<div class="report-ref"><strong>${esc(r.referenciaLabel)}:</strong> ${esc(r.referencia)}</div>` : ''}
+      </div>
+      <div class="report-side">
+        <span class="${badgeClaseEstado(r.estado)}">${esc(r.estado)}</span>
+        <div class="report-date">📅 ${esc(formatearFecha(r.fecha))}</div>
+      </div>
+    `;
+    return row;
+  }
+
+  function render(){
+    const registros = construirRegistros();
+    const list = document.getElementById('reportList');
+    const empty = document.getElementById('emptyState');
+    list.innerHTML = '';
+
+    const totalOrdenes = registros.filter(r => r.tipo === 'orden').length;
+    const totalMant = registros.filter(r => r.tipo === 'mantenimiento').length;
+    const abiertos = registros.filter(r => ['Pendiente','En proceso','Programado','Vencido'].includes(r.estado)).length;
+
+    document.getElementById('statTotal').textContent = registros.length;
+    document.getElementById('statOrdenes').textContent = totalOrdenes;
+    document.getElementById('statMant').textContent = totalMant;
+    document.getElementById('statAbiertos').textContent = abiertos;
+
+    const filtrados = registros.filter(r => {
+      const coincideTipo = filtroTipo === 'todos' || r.tipo === filtroTipo;
+      const texto = (r.placa + ' ' + r.cliente + ' ' + r.detalle).toLowerCase();
+      const coincideTexto = !filtroTexto || texto.includes(filtroTexto);
+      return coincideTipo && coincideTexto;
+    });
+
+    if (registros.length === 0){
+      empty.style.display = 'flex';
+      empty.querySelector('p').textContent = 'Todavía no hay nada que reportar';
+      empty.querySelector('span').textContent = 'Crea órdenes de trabajo o mantenimientos para verlos aquí';
+    } else if (filtrados.length === 0){
+      empty.style.display = 'flex';
+      empty.querySelector('p').textContent = 'Ningún registro coincide con tu búsqueda';
+      empty.querySelector('span').textContent = 'Prueba con otro filtro o término';
+    } else {
+      empty.style.display = 'none';
+      filtrados.forEach(r => list.appendChild(crearFila(r)));
+    }
+    return filtrados;
+  }
+
+  /* ===================== IMPRIMIR / CSV ===================== */
+  document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+
+  document.getElementById('btnCsv').addEventListener('click', () => {
+    const registros = construirRegistros();
+    const encabezado = ['Tipo','Placa','Cliente','Detalle','Estado','Fecha'];
+    const filas = registros.map(r => [r.tipoLabel, r.placa, r.cliente, r.detalle, r.estado, r.fecha]);
+    const csv = [encabezado, ...filas]
+      .map(fila => fila.map(v => `"${(v || '').toString().replace(/"/g,'""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reporte_jd_taller_' + hoyISO() + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('fechaGenerado').textContent = formatearFecha(hoyISO());
+  cargarDatos();
+</script>
+
+<script>
+(async function iniciarTemporizadorReportes() {
+    const pantallaTiempo = document.getElementById('reportesTimer');
+
+    function volverAlInicio() {
+        window.location.replace('/index.html?reportes=expirado');
+    }
+
+    try {
+        const respuesta = await fetch('/api/reportes/estado', {
+            cache: 'no-store'
+        });
+
+        if (!respuesta.ok) {
+            volverAlInicio();
+            return;
+        }
+
+        const datos = await respuesta.json();
+        const hasta = Number(datos.hasta);
+        const restanteInicial = hasta - Date.now();
+
+        if (!Number.isFinite(hasta) || restanteInicial <= 0) {
+            volverAlInicio();
+            return;
+        }
+
+        // Se utiliza la fecha de expiración del servidor.
+        // Actualizar la página no reinicia los 120 segundos.
+        const finLocal = Date.now() + restanteInicial;
+        let cerrando = false;
+
+        function actualizarContador() {
+            const segundosRestantes = Math.max(
+                0,
+                Math.ceil((finLocal - Date.now()) / 1000)
+            );
+
+            const minutos = String(
+                Math.floor(segundosRestantes / 60)
+            ).padStart(2, '0');
+
+            const segundos = String(
+                segundosRestantes % 60
+            ).padStart(2, '0');
+
+            if (pantallaTiempo) {
+                pantallaTiempo.textContent =
+                    `TIEMPO RESTANTE: ${minutos}:${segundos}`;
+            }
+
+            if (segundosRestantes <= 0 && !cerrando) {
+                cerrando = true;
+
+                fetch('/api/reportes/cerrar', {
+                    method: 'POST',
+                    cache: 'no-store'
+                }).catch(() => {});
+
+                alert(
+                    'El tiempo de acceso a reportes ha finalizado.'
+                );
+
+                volverAlInicio();
+                return;
+            }
+
+            window.setTimeout(actualizarContador, 1000);
+        }
+
+        actualizarContador();
+
+    } catch (error) {
+        volverAlInicio();
+    }
+})();
+</script>
+
+<script>
+/* ===== ADMINISTRACIÓN DE CONSTANCIAS ===== */
+
+const listaConstancias = document.getElementById('listaConstancias');
+const vacioConstancias = document.getElementById('vacioConstancias');
+const contadorConstancias = document.getElementById('contadorConstancias');
+
+let constanciasRecibidas = [];
+
+function mostrarFechaHoraConstancia(valor) {
+    if (!valor) return 'No registrada';
+
+    const coincidencia = String(valor).match(
+        /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/
+    );
+
+    if (!coincidencia) return String(valor);
+
+    return `${coincidencia[3]}/${coincidencia[2]}/${coincidencia[1]} ${coincidencia[4]}:${coincidencia[5]}`;
+}
+
+function renderConstancias() {
+    listaConstancias.innerHTML = '';
+
+    const pendientes = constanciasRecibidas.filter(
+        c => c.estado_revision === 'Pendiente'
+    ).length;
+
+    contadorConstancias.textContent =
+        `${constanciasRecibidas.length} constancia(s) recibida(s) · ${pendientes} pendiente(s)`;
+
+    vacioConstancias.hidden = constanciasRecibidas.length > 0;
+
+    const fragmento = document.createDocumentFragment();
+
+    constanciasRecibidas.forEach(c => {
+        const tarjeta = document.createElement('article');
+        tarjeta.className = 'constancia-card';
+
+        const estado = String(c.estado_revision || 'Pendiente');
+        const claseEstado = estado === 'Revisada'
+            ? 'revisada'
+            : 'pendiente';
+
+        const idSeguro = esc(c.constancia_id);
+
+        tarjeta.innerHTML = `
+            <div class="constancia-card-header">
+                <div>
+                    <strong>Orden #${esc(c.orden_id)}</strong>
+                    <small>Placa: ${esc(c.placa)}</small>
+                </div>
+                <span class="constancia-status ${claseEstado}">
+                    ${esc(estado)}
+                </span>
+            </div>
+
+            <div class="constancia-grid">
+                <div class="constancia-data">
+                    <small>Cliente</small>
+                    <div>${esc(c.cliente || 'No registrado')}</div>
+                </div>
+
+                <div class="constancia-data">
+                    <small>Vehículo</small>
+                    <div>${esc(c.marca_modelo || 'No registrado')}</div>
+                </div>
+
+                <div class="constancia-data">
+                    <small>Kilometraje</small>
+                    <div>${c.kilometraje == null
+                        ? 'No registrado'
+                        : esc(Number(c.kilometraje).toLocaleString('es-PE')) + ' km'}</div>
+                </div>
+
+                <div class="constancia-data">
+                    <small>Mecánico</small>
+                    <div>${esc(c.mecanico_nombre)}</div>
+                </div>
+
+                <div class="constancia-data">
+                    <small>Fecha de reparación</small>
+                    <div>${esc(mostrarFechaHoraConstancia(c.fecha_reparacion))}</div>
+                </div>
+
+                <div class="constancia-data">
+                    <small>Enviada el</small>
+                    <div>${esc(mostrarFechaHoraConstancia(c.fecha_envio))}</div>
+                </div>
+            </div>
+
+            <div class="constancia-detail">
+                <div class="constancia-data">
+                    <small>Síntoma inicial</small>
+                    <div>${esc(c.sintoma || 'No registrado')}</div>
+                </div>
+
+                <p>${esc(c.detalle_reparacion)}</p>
+            </div>
+
+            <div class="constancia-card-actions no-print">
+                <button type="button"
+                    class="btn-constancia-action primary"
+                    data-constancia-accion="imprimir"
+                    data-id="${idSeguro}">
+                    Generar constancia
+                </button>
+
+                ${estado === 'Pendiente' ? `
+                    <button type="button"
+                        class="btn-constancia-action"
+                        data-constancia-accion="revisar"
+                        data-id="${idSeguro}">
+                        Marcar revisada
+                    </button>
+                ` : ''}
+            </div>
+        `;
+
+        fragmento.appendChild(tarjeta);
+    });
+
+    listaConstancias.appendChild(fragmento);
+}
+
+async function cargarConstancias() {
+    contadorConstancias.textContent = 'Consultando constancias...';
+
+    try {
+        constanciasRecibidas = await api('/api/reportes/constancias');
+        renderConstancias();
+    } catch (error) {
+        contadorConstancias.textContent =
+            'No se pudieron cargar las constancias: ' + error.message;
+    }
+}
+
+function imprimirConstancia(c) {
+    const ventana = window.open('', '_blank');
+
+    if (!ventana) {
+        alert('Permite las ventanas emergentes para generar la constancia.');
+        return;
+    }
+
+    const fechaReparacion =
+        mostrarFechaHoraConstancia(c.fecha_reparacion);
+    const fechaEnvio =
+        mostrarFechaHoraConstancia(c.fecha_envio);
+
+    const documento = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Constancia de reparación - J&D</title>
+<style>
+    body {
+        margin: 0;
+        padding: 35px;
+        color: #202020;
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+    }
+    .documento {
+        max-width: 850px;
+        margin: auto;
+    }
+    .empresa {
+        border-bottom: 3px solid #e8790a;
+        padding-bottom: 18px;
+        margin-bottom: 24px;
+    }
+    h1 { margin-bottom: 4px; font-size: 25px; }
+    h2 { margin-top: 26px; font-size: 17px; }
+    .muted { color: #555; font-size: 12px; }
+    .cuadricula {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .dato {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px;
+        overflow-wrap: anywhere;
+    }
+    .etiqueta {
+        display: block;
+        color: #555;
+        font-size: 11px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .detalle {
+        white-space: pre-wrap;
+        border: 1px solid #ddd;
+        padding: 14px;
+        border-radius: 6px;
+    }
+    .firmas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-top: 65px;
+        text-align: center;
+    }
+    .firma {
+        padding-top: 8px;
+        border-top: 1px solid #555;
+        font-size: 12px;
+    }
+    .no-print { margin-bottom: 20px; }
+    @media print {
+        body { padding: 0; }
+        .no-print { display: none; }
+        .documento { max-width: none; }
+    }
+    @media (max-width: 600px) {
+        body { padding: 15px; }
+        .cuadricula, .firmas { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+<div class="documento">
+    <button class="no-print" onclick="window.print()">
+        Imprimir / Guardar como PDF
+    </button>
+
+    <header class="empresa">
+        <h1>MECÁNICA AUTOMOTRIZ J&amp;D</h1>
+        <div>TALLER DIGITAL</div>
+        <p class="muted">
+            CONSTANCIA INTERNA DE REPARACIÓN · Orden #${esc(c.orden_id)}
+        </p>
+        <p class="muted">
+            RUC: ____________________ · Dirección: ____________________
+            <br>Teléfono: ____________________
+        </p>
+    </header>
+
+    <h2>Datos del vehículo y cliente</h2>
+    <div class="cuadricula">
+        <div class="dato"><span class="etiqueta">Placa</span>${esc(c.placa)}</div>
+        <div class="dato"><span class="etiqueta">Marca y modelo</span>${esc(c.marca_modelo || 'No registrado')}</div>
+        <div class="dato"><span class="etiqueta">Año</span>${esc(c.anio ?? 'No registrado')}</div>
+        <div class="dato"><span class="etiqueta">Kilometraje</span>${c.kilometraje == null ? 'No registrado' : esc(Number(c.kilometraje).toLocaleString('es-PE')) + ' km'}</div>
+        <div class="dato"><span class="etiqueta">Cliente</span>${esc(c.cliente || 'No registrado')}</div>
+        <div class="dato"><span class="etiqueta">Síntoma reportado</span>${esc(c.sintoma || 'No registrado')}</div>
+    </div>
+
+    <h2>Detalle del trabajo realizado</h2>
+    <div class="detalle">${esc(c.detalle_reparacion)}</div>
+
+    <h2>Datos de la intervención</h2>
+    <div class="cuadricula">
+        <div class="dato"><span class="etiqueta">Mecánico responsable</span>${esc(c.mecanico_nombre)}</div>
+        <div class="dato"><span class="etiqueta">Fecha y hora de reparación</span>${esc(fechaReparacion)}</div>
+        <div class="dato"><span class="etiqueta">Fecha de envío</span>${esc(fechaEnvio)}</div>
+        <div class="dato"><span class="etiqueta">Estado de la orden</span>${esc(c.estado_orden || 'No registrado')}</div>
+    </div>
+
+    <div class="firmas">
+        <div class="firma">Firma del mecánico responsable</div>
+        <div class="firma">Recepción / Administración</div>
+    </div>
+
+    <p class="muted" style="margin-top:30px">
+        Documento interno del taller para constancia de los trabajos realizados.
+        No constituye un comprobante electrónico tributario.
+    </p>
+</div>
+</body>
+</html>`;
+
+    ventana.document.open();
+    ventana.document.write(documento);
+    ventana.document.close();
+}
+
+listaConstancias.addEventListener('click', async event => {
+    const boton = event.target.closest('[data-constancia-accion]');
+    if (!boton) return;
+
+    const id = boton.dataset.id;
+    const accion = boton.dataset.constanciaAccion;
+
+    const constancia = constanciasRecibidas.find(
+        c => String(c.constancia_id) === String(id)
+    );
+
+    if (!constancia) return;
+
+    if (accion === 'imprimir') {
+        imprimirConstancia(constancia);
+        return;
+    }
+
+    if (accion === 'revisar') {
+        boton.disabled = true;
+
+        try {
+            await api(
+                '/api/reportes/constancias/' +
+                    encodeURIComponent(id) +
+                    '/revision',
+                { method: 'PUT', body: {} }
+            );
+
+            await cargarConstancias();
+        } catch (error) {
+            alert('No se pudo actualizar la constancia: ' + error.message);
+            boton.disabled = false;
+        }
+    }
+});
+
+document.getElementById('btnActualizarConstancias')
+    .addEventListener('click', cargarConstancias);
+
+cargarConstancias();
+</script>
+<script src="/logout.js" defer></script>
+</body>
+</html>

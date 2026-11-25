@@ -9,7 +9,65 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="Orden.css">
 <link rel="stylesheet" href="responsive.css">
-</head>
+
+<style>
+  /* Selector de marca/modelo: estilos aislados para no alterar el resto del sistema */
+  .vehiculo-selector {
+    position: relative;
+    width: 100%;
+  }
+  .vehiculo-selector input {
+    width: 100%;
+  }
+  .vehiculo-dropdown {
+    position: absolute;
+    z-index: 1000;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px;
+    border: 1px solid rgba(232, 121, 10, .55);
+    border-radius: 10px;
+    background: #171711;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+  }
+  .vehiculo-dropdown[hidden] {
+    display: none;
+  }
+  .vehiculo-grupo {
+    padding: 9px 9px 5px;
+    color: #E8790A;
+    font: 600 11px 'IBM Plex Mono', monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .vehiculo-opcion {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #eee9dc;
+    text-align: left;
+    font: 500 13px 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  .vehiculo-opcion:hover,
+  .vehiculo-opcion:focus {
+    outline: none;
+    background: rgba(232, 121, 10, .16);
+  }
+  .vehiculo-sin-resultados {
+    padding: 12px 10px;
+    color: #aaa494;
+    font-size: 12px;
+  }
+</style>
+\n</head>
 <body>
  
 <div class="page">
@@ -150,7 +208,20 @@
         </div>
         <div class="field">
           <label for="ordenMarca">Marca / Modelo</label>
-          <input type="text" id="ordenMarca" name="marcaModelo" placeholder="Ej. Toyota Corolla">
+          <div class="vehiculo-selector">
+            <input
+              type="text"
+              id="ordenMarca"
+              name="marcaModelo"
+              placeholder="Buscar o seleccionar vehículo..."
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="listaVehiculos"
+            >
+            <div id="listaVehiculos" class="vehiculo-dropdown" role="listbox" hidden></div>
+          </div>
         </div>
         <div class="field">
           <label for="ordenKm">Kilometraje</label>
@@ -323,6 +394,132 @@
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3200);
   }
+
+
+  /* ===== SELECTOR CON SCROLL DE MARCAS Y MODELOS ===== */
+  const catalogoVehiculos = {
+    "TOYOTA": ["Agya", "Avanza", "Corolla", "Corolla Cross", "Etios", "Fortuner", "Hilux", "Hiace", "Land Cruiser", "Rush", "RAV4", "Raize", "Yaris"],
+    "NISSAN": ["Almera", "Frontier", "Kicks", "March", "Navara", "Qashqai", "Sentra", "Versa", "X-Trail"],
+    "HONDA": ["Accord", "BR-V", "City", "Civic", "CR-V", "HR-V", "WR-V"],
+    "MAZDA": ["CX-3", "CX-30", "CX-5", "CX-9", "Mazda 2", "Mazda 3", "BT-50"],
+    "SUZUKI": ["Alto", "Baleno", "Celerio", "Dzire", "Ertiga", "Grand Vitara", "Jimny", "S-Presso", "Swift", "Vitara"],
+    "MITSUBISHI": ["ASX", "L200", "Lancer", "Montero", "Montero Sport", "Outlander", "Xpander"],
+    "SUBARU": ["Crosstrek", "Forester", "Impreza", "Outback", "XV"],
+    "HYUNDAI": ["Accent", "Creta", "Elantra", "Grand i10", "Santa Fe", "Tucson", "Venue", "i10", "i20", "i30"],
+    "KIA": ["Carnival", "Cerato", "K3", "K5", "Picanto", "Rio", "Seltos", "Soluto", "Sorento", "Sportage"],
+    "KGM / SSANGYONG": ["Korando", "Musso", "Rexton", "Tivoli"],
+    "CHANGAN": ["Alsvin", "CS15", "CS35", "CS35 Plus", "CS55", "CS55 Plus", "CS75", "CS75 Plus", "Hunter", "X7 Plus"],
+    "CHERY": ["Arrizo 5", "Arrizo 8", "Tiggo 2", "Tiggo 4", "Tiggo 7", "Tiggo 8", "Tiggo 9"],
+    "JAC": ["E10X", "JS2", "JS3", "JS4", "JS6", "T6", "T8", "T9", "X200"],
+    "GEELY": ["Coolray", "Emgrand", "Geometry C", "GX3 Pro", "Okavango", "Starray"],
+    "JETOUR": ["Dashing", "T1", "T2", "X50", "X70", "X70 Plus", "X90 Plus"],
+    "DFSK": ["C31", "C32", "C35", "E5", "Glory 500", "Glory 560", "Glory 580", "K05S"],
+    "GREAT WALL": ["Haval H6", "Haval Jolion", "Poer", "Wingle 5", "Wingle 7"],
+    "HAVAL": ["H2", "H6", "Jolion", "M6"],
+    "BYD": ["Dolphin", "Han", "Seagull", "Song Plus", "Tang", "Yuan Plus"],
+    "DONGFENG": ["AX7", "DF  Yueda", "Rich 6", "T5 Evo"],
+    "GAC": ["Emkoo", "GS3", "GS4", "GS8", "M8"],
+    "MG": ["3", "5", "6", "GT", "HS", "MG ZS", "RX5"],
+    "FOTON": ["Tunland", "View", "Midi", "Aumark", "Gratour"],
+    "JMC": ["Vigus", "Carrying", "Conquer"],
+    "SHINERAY": ["T30", "X30", "X30L"],
+    "MAXUS": ["D60", "D90", "T60", "T90", "V80", "V90"],
+    "BAIC": ["BJ30", "BJ40", "X35", "X55", "X7"],
+    "KAIYI": ["E5", "X3", "X3 Pro", "X7"],
+    "CHEVROLET": ["Captiva", "Colorado", "Groove", "N300", "Onix", "Sail", "Spark", "Tracker", "Trailblazer"],
+    "FORD": ["EcoSport", "Escape", "Everest", "Ranger", "Territory", "Transit"],
+    "JEEP": ["Compass", "Grand Cherokee", "Renegade", "Wrangler"],
+    "RAM": ["700", "1000", "1500"],
+    "VOLKSWAGEN": ["Amarok", "Gol", "Golf", "Jetta", "Nivus", "Polo", "T-Cross", "Tiguan", "Virtus"],
+    "RENAULT": ["Duster", "Kardian", "Kangoo", "Kwid", "Logan", "Oroch", "Stepway"],
+    "PEUGEOT": ["2008", "3008", "5008", "Partner", "Rifter"],
+    "CITROËN": ["Berlingo", "C3", "C4 Cactus", "C5 Aircross"],
+    "FIAT": ["Argo", "Cronos", "Fiorino", "Mobi", "Strada", "Toro"],
+    "BMW": ["Serie 1", "Serie 2", "Serie 3", "Serie 5", "X1", "X3", "X5"],
+    "MERCEDES-BENZ": ["Clase A", "Clase C", "Clase E", "GLA", "GLB", "GLC", "GLE", "Sprinter"],
+    "AUDI": ["A3", "A4", "A6", "Q2", "Q3", "Q5", "Q7"],
+    "VOLVO": ["S60", "S90", "XC40", "XC60", "XC90"],
+    "SEAT": ["Arona", "Ateca", "Ibiza", "León"],
+    "TESLA": ["Model 3", "Model S", "Model X", "Model Y"],
+    "MAHINDRA": ["KUV100", "Scorpio", "Thar", "XUV300", "XUV500"],
+    "TATA": ["Ace", "Nexon", "Safari", "Xenon"]
+  };
+
+  const campoVehiculo = document.getElementById('ordenMarca');
+  const listaVehiculos = document.getElementById('listaVehiculos');
+
+  function dibujarListaVehiculos(filtro = '') {
+    const termino = filtro.trim().toLocaleLowerCase('es');
+    listaVehiculos.replaceChildren();
+    let cantidad = 0;
+
+    Object.entries(catalogoVehiculos).forEach(([marca, modelos]) => {
+      const coincidencias = modelos.filter(modelo =>
+        (marca + ' ' + modelo).toLocaleLowerCase('es').includes(termino)
+      );
+      if (!coincidencias.length) return;
+
+      const encabezado = document.createElement('div');
+      encabezado.className = 'vehiculo-grupo';
+      encabezado.textContent = marca;
+      listaVehiculos.appendChild(encabezado);
+
+      coincidencias.forEach(modelo => {
+        const opcion = document.createElement('button');
+        opcion.type = 'button';
+        opcion.className = 'vehiculo-opcion';
+        opcion.setAttribute('role', 'option');
+        opcion.textContent = marca + ' ' + modelo;
+        opcion.addEventListener('click', () => {
+          campoVehiculo.value = opcion.textContent;
+          listaVehiculos.hidden = true;
+          campoVehiculo.setAttribute('aria-expanded', 'false');
+          campoVehiculo.focus();
+        });
+        listaVehiculos.appendChild(opcion);
+        cantidad++;
+      });
+    });
+
+    if (!cantidad) {
+      const vacio = document.createElement('div');
+      vacio.className = 'vehiculo-sin-resultados';
+      vacio.textContent = 'No se encontraron vehículos. Puedes escribir el modelo manualmente.';
+      listaVehiculos.appendChild(vacio);
+    }
+  }
+
+  campoVehiculo.addEventListener('focus', () => {
+    dibujarListaVehiculos(campoVehiculo.value);
+    listaVehiculos.hidden = false;
+    campoVehiculo.setAttribute('aria-expanded', 'true');
+  });
+
+  campoVehiculo.addEventListener('input', () => {
+    dibujarListaVehiculos(campoVehiculo.value);
+    listaVehiculos.hidden = false;
+    campoVehiculo.setAttribute('aria-expanded', 'true');
+  });
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.vehiculo-selector')) {
+      listaVehiculos.hidden = true;
+      campoVehiculo.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  campoVehiculo.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      listaVehiculos.hidden = true;
+      campoVehiculo.setAttribute('aria-expanded', 'false');
+    }
+    if (event.key === 'ArrowDown' && listaVehiculos.hidden) {
+      dibujarListaVehiculos(campoVehiculo.value);
+      listaVehiculos.hidden = false;
+      campoVehiculo.setAttribute('aria-expanded', 'true');
+    }
+  });
+
 
   /* ===================== CREAR ORDEN ===================== */
   const formOrden = document.getElementById('formOrden');
